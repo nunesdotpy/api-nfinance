@@ -71,7 +71,7 @@ app.post("/login", async (req, res) => {
         });
       default:
         // TODO: Generate and send a JWT token for authentication
-        res.send("Login successful");
+        res.status(200).json({message: "Login successful"});
         break;
     }
   } catch (err) {
