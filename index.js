@@ -22,11 +22,11 @@ app.post("/register", async (req, res) => {
       switch (true) {
         case !username || !password || !passwordVerify:
           return res.status(400).json({
-            errorMessage: "Please enter all required fields.",
+            errorMessage: "Porfavor, preencha todos os campos.",
           });
         case password !== passwordVerify:
           return res.status(400).json({
-            errorMessage: "Please enter the same password twice.",
+            errorMessage: "Porfavor, digite a mesma senha duas vezes",
           });
         default:
           break;
@@ -47,7 +47,7 @@ app.post("/register", async (req, res) => {
       res.send(newUser);
     } else {
       return res.status(400).json({
-        errorMessage: "User already exists.",
+        errorMessage: "Usuário já cadastrado.",
       });
     }
   } catch (err) {
@@ -75,20 +75,25 @@ app.post("/login", async (req, res) => {
     switch (true) {
       case !user:
         return res.status(400).json({
-          errorMessage: "Invalid username or password.",
+          errorMessage: "Username ou senha inválidos.",
         });
       case !(await bcrypt.compare(password, user.password)):
         return res.status(400).json({
-          errorMessage: "Invalid username or password.",
+          errorMessage: "Username ou senha inválidos.",
         });
       default:
-        jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: "1h" }, (err, token) => {
-          if (err) {
-            console.error(err);
-            res.status(500).send();
+        jwt.sign(
+          { userId: user._id },
+          process.env.JWT_SECRET,
+          { expiresIn: "1h" },
+          (err, token) => {
+            if (err) {
+              console.error(err);
+              res.status(500).send();
+            }
+            res.json({ id: user._id, token });
           }
-          res.json({id: user._id, token });
-        });
+        );
         break;
     }
   } catch (err) {
@@ -98,17 +103,25 @@ app.post("/login", async (req, res) => {
 });
 
 // Create a new spent transaction
-app.post("/spent/register/:id", authenticateToken, async (req, res) => {
+app.post("/:type/register/:id", authenticateToken, async (req, res) => {
+  const type = req.params.type;
+
   try {
-    const { name, amount, category } = req.body;
+    const { name, amount, description, category } = req.body;
     const date = new Date(); // Get current system date
     const newTransaction = new Transaction({
       name,
       amount,
       category,
+      description,
       date,
       userID: req.params.id,
     });
+    if (type === "spent") {
+      newTransaction.type = 0;
+    } else if (type === "income") {
+      newTransaction.type = 1;
+    }
     await newTransaction.save();
     res.send(newTransaction);
   } catch (err) {
@@ -118,10 +131,24 @@ app.post("/spent/register/:id", authenticateToken, async (req, res) => {
 });
 
 // Get all spent transactions
-app.get("/spents/:id", authenticateToken, async (req, res) => {
+app.get("/:type/index/:id", authenticateToken, async (req, res) => {
+  const typeTransaction = req.params.type;
+  var type = 0;
+
+  if (typeTransaction === "spent") {
+    type = 0;
+  } else if (typeTransaction === "income") {
+    type = 1;
+  } else {
+    return res.status(400).json({ message: "Tipo de transação inválido" });
+  }
+
   try {
-    const transactions = await Transaction.find({ userID: req.params.id });
-    res.send(transactions);
+    const transactions = await Transaction.find({
+      userID: req.params.id,
+      type: type,
+    });
+    return res.send(transactions);
   } catch (err) {
     console.error(err);
     res.status(500).send();
@@ -129,7 +156,7 @@ app.get("/spents/:id", authenticateToken, async (req, res) => {
 });
 
 // Edit a spent by id
-app.put("/spent/:id", async (req, res) => {
+app.put("/transaction/:id", authenticateToken, async (req, res) => {
   try {
     const { name, amount, category } = req.body;
     const date = new Date();
@@ -137,7 +164,11 @@ app.put("/spent/:id", async (req, res) => {
       { _id: req.params.id },
       { name, amount, category, date }
     );
-    res.send("Valor atualizado com sucesso!");
+
+    if (transaction === null)
+      return res.status(404).json({ message: "Transação não encontrada" });
+
+    res.json({ message: "Valor atualizado com sucesso!" });
   } catch (err) {
     console.error(err);
     res.status(500).send();
@@ -145,32 +176,42 @@ app.put("/spent/:id", async (req, res) => {
 });
 
 // Delete a spent by id
-app.delete("/transaction/:id", async (req, res) => {
+app.delete("/transaction/delete/:id", authenticateToken, async (req, res) => {
   try {
     const transaction = await Transaction.findOneAndDelete({
       _id: req.params.id,
     });
-    res.send("Valor deletado com sucesso!");
+
+    if (transaction === null)
+      return res.status(404).json({ message: "Transação não encontrada" });
+
+    res.json({ message: "Valor deletado com sucesso!" });
   } catch (err) {
     console.error(err);
     res.status(500).send();
   }
 });
 
-// Create a new income transaction
-app.post("/income", async (req, res) => {
+// Get total amount of transactions
+app.get("/amount/:id", authenticateToken, async (req, res) => {
   try {
-    const { name, amount } = req.body;
-    const category = "income";
-    const date = new Date(); // Get current system date
-    const newTransaction = new Transaction({
-      name,
-      amount,
-      category,
-      date,
+    const spentTransactions = await Transaction.find({
+      userID: req.params.id,
+      type: 0,
     });
-    await newTransaction.save();
-    res.send(newTransaction);
+    const totalSpent = spentTransactions.reduce(
+      (total, transaction) => total + transaction.amount,
+      0
+    );
+    const incomeTransactions = await Transaction.find({
+      userID: req.params.id,
+      type: 1,
+    });
+    const totalIncome = incomeTransactions.reduce(
+      (total, transaction) => total + transaction.amount,
+      0
+    );
+    res.send({ totalSpent, totalIncome });
   } catch (err) {
     console.error(err);
     res.status(500).send();
