@@ -3,6 +3,7 @@ const app = express();
 const mongoose = require("mongoose");
 const cors = require("cors");
 const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
 require("dotenv").config();
 const User = require("./modules/User");
 const Transaction = require("./modules/Transaction");
@@ -55,6 +56,17 @@ app.post("/register", async (req, res) => {
   }
 });
 
+function authenticateToken(req, res, next) {
+  const token = req.headers["x-acess-authorization"];
+  if (token == null) return res.sendStatus(401);
+
+  jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+    if (err) return res.sendStatus(403);
+    req.user = user;
+    next();
+  });
+}
+
 app.post("/login", async (req, res) => {
   try {
     const { username, password } = req.body;
@@ -70,8 +82,13 @@ app.post("/login", async (req, res) => {
           errorMessage: "Invalid username or password.",
         });
       default:
-        // TODO: Generate and send a JWT token for authentication
-        res.status(200).json({message: "Login successful"});
+        jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: "1h" }, (err, token) => {
+          if (err) {
+            console.error(err);
+            res.status(500).send();
+          }
+          res.json({id: user._id, token });
+        });
         break;
     }
   } catch (err) {
@@ -81,7 +98,7 @@ app.post("/login", async (req, res) => {
 });
 
 // Create a new spent transaction
-app.post("/spent", async (req, res) => {
+app.post("/spent/register/:id", authenticateToken, async (req, res) => {
   try {
     const { name, amount, category } = req.body;
     const date = new Date(); // Get current system date
@@ -90,6 +107,7 @@ app.post("/spent", async (req, res) => {
       amount,
       category,
       date,
+      userID: req.params.id,
     });
     await newTransaction.save();
     res.send(newTransaction);
@@ -100,9 +118,9 @@ app.post("/spent", async (req, res) => {
 });
 
 // Get all spent transactions
-app.get("/spent", async (req, res) => {
+app.get("/spents/:id", authenticateToken, async (req, res) => {
   try {
-    const transactions = await Transaction.find();
+    const transactions = await Transaction.find({ userID: req.params.id });
     res.send(transactions);
   } catch (err) {
     console.error(err);
