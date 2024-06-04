@@ -91,7 +91,7 @@ app.post("/login", async (req, res) => {
               console.error(err);
               res.status(500).send();
             }
-            res.json({ id: user._id, token });
+            res.status(200).json({data: { id: user._id, token }});
           }
         );
         break;
