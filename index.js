@@ -15,12 +15,12 @@ app.use(cors());
 
 app.post("/register", async (req, res) => {
   try {
-    const { username, password, passwordVerify } = req.body;
-    const existingUser = await User.findOne({ username });
+    const { email, password, passwordVerify } = req.body;
+    const existingUser = await User.findOne({ email });
     if (existingUser === null) {
       // validation
       switch (true) {
-        case !username || !password || !passwordVerify:
+        case !email || !password || !passwordVerify:
           return res.status(400).json({
             errorMessage: "Porfavor, preencha todos os campos.",
           });
@@ -38,7 +38,7 @@ app.post("/register", async (req, res) => {
 
       // create a new user instance
       const newUser = new User({
-        username,
+        email,
         password: passwordHash,
       });
 
@@ -69,17 +69,17 @@ function authenticateToken(req, res, next) {
 
 app.post("/login", async (req, res) => {
   try {
-    const { username, password } = req.body;
-    const user = await User.findOne({ username });
+    const { email, password } = req.body;
+    const user = await User.findOne({ email });
 
     switch (true) {
       case !user:
         return res.status(400).json({
-          errorMessage: "Username ou senha inválidos.",
+          errorMessage: "E-mail ou senha inválidos.",
         });
       case !(await bcrypt.compare(password, user.password)):
         return res.status(400).json({
-          errorMessage: "Username ou senha inválidos.",
+          errorMessage: "E-mail ou senha inválidos.",
         });
       default:
         jwt.sign(
