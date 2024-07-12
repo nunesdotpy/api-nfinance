@@ -15,18 +15,18 @@ app.use(cors());
 
 app.post("/register", async (req, res) => {
   try {
-    const { email, password, passwordVerify } = req.body;
+    const { name, email, password, passwordVerify } = req.body;
     const existingUser = await User.findOne({ email });
     if (existingUser === null) {
       // validation
       switch (true) {
         case !email || !password || !passwordVerify:
           return res.status(400).json({
-            errorMessage: "Porfavor, preencha todos os campos.",
+            message: "Porfavor, preencha todos os campos.",
           });
         case password !== passwordVerify:
           return res.status(400).json({
-            errorMessage: "Porfavor, digite a mesma senha duas vezes",
+            message: "Por favor, digite a mesma senha duas vezes",
           });
         default:
           break;
@@ -38,21 +38,22 @@ app.post("/register", async (req, res) => {
 
       // create a new user instance
       const newUser = new User({
+        name,
         email,
         password: passwordHash,
       });
 
       // save the user to the database
       await newUser.save();
-      res.send(newUser);
+      res.status(200).json({ message: "Usuário cadastrado com sucesso!" });
     } else {
       return res.status(400).json({
-        errorMessage: "Usuário já cadastrado.",
+        message: "Usuário já cadastrado.",
       });
     }
   } catch (err) {
     console.error(err);
-    res.status(500).send();
+    res.status(500).send(err);
   }
 });
 
@@ -75,11 +76,11 @@ app.post("/login", async (req, res) => {
     switch (true) {
       case !user:
         return res.status(400).json({
-          errorMessage: "E-mail ou senha inválidos.",
+          message: "E-mail ou senha inválidos.",
         });
       case !(await bcrypt.compare(password, user.password)):
         return res.status(400).json({
-          errorMessage: "E-mail ou senha inválidos.",
+          message: "E-mail ou senha inválidos.",
         });
       default:
         jwt.sign(
@@ -91,7 +92,16 @@ app.post("/login", async (req, res) => {
               console.error(err);
               res.status(500).send();
             }
-            res.status(200).json({data: { id: user._id, token }});
+            res
+              .status(200)
+              .json({
+                data: {
+                  id: user._id,
+                  name: user.name,
+                  emaiL: user.email,
+                  token,
+                },
+              });
           }
         );
         break;
