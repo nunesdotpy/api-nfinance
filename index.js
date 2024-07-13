@@ -92,17 +92,15 @@ app.post("/login", async (req, res) => {
               console.error(err);
               res.status(500).send();
             }
-            res
-              .status(200)
-              .json({
-                data: {
-                  id: user._id,
-                  name: user.name,
-                  emaiL: user.email,
-                  token,
-                },
-              });
-          }
+            res.status(200).json({
+              data: {
+                id: user._id,
+                name: user.name,
+                emaiL: user.email,
+                token,
+              },
+            });
+          },
         );
         break;
     }
@@ -158,7 +156,9 @@ app.get("/:type/index/:id", authenticateToken, async (req, res) => {
       userID: req.params.id,
       type: type,
     });
-    return res.send(transactions);
+    return res
+      .status(200)
+      .send({ data: transactions, message: "Transações listadas com sucesso" });
   } catch (err) {
     console.error(err);
     res.status(500).send();
@@ -172,7 +172,7 @@ app.put("/transaction/:id", authenticateToken, async (req, res) => {
     const date = new Date();
     const transaction = await Transaction.findOneAndUpdate(
       { _id: req.params.id },
-      { name, amount, category, date }
+      { name, amount, category, date },
     );
 
     if (transaction === null)
@@ -211,7 +211,7 @@ app.get("/amount/:id", authenticateToken, async (req, res) => {
     });
     const totalSpent = spentTransactions.reduce(
       (total, transaction) => total + transaction.amount,
-      0
+      0,
     );
     const incomeTransactions = await Transaction.find({
       userID: req.params.id,
@@ -219,7 +219,7 @@ app.get("/amount/:id", authenticateToken, async (req, res) => {
     });
     const totalIncome = incomeTransactions.reduce(
       (total, transaction) => total + transaction.amount,
-      0
+      0,
     );
     res.send({ totalSpent, totalIncome });
   } catch (err) {
