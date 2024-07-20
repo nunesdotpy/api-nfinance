@@ -195,7 +195,7 @@ app.delete("/transaction/delete/:id", authenticateToken, async (req, res) => {
     if (transaction === null)
       return res.status(404).json({ message: "Transação não encontrada" });
 
-    res.json({ message: "Valor deletado com sucesso!" });
+    res.status(200).send({ message: "Transação deletada com sucesso!" });
   } catch (err) {
     console.error(err);
     res.status(500).send();
