@@ -96,11 +96,12 @@ app.post("/login", async (req, res) => {
               data: {
                 id: user._id,
                 name: user.name,
-                emaiL: user.email,
+                email: user.email,
                 token,
               },
+              message: "Successful login.",
             });
-          },
+          }
         );
         break;
     }
