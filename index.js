@@ -110,6 +110,32 @@ app.post("/login", async (req, res) => {
   }
 });
 
+// Refresh Token
+app.post("/auth/refresh", async (req, res) => {
+  const token = req.body.token;
+  const email = req.body.email;
+  const user = await User.findOne({ email });
+
+  jwt.verify(token, process.env.JWT_SECRET, (err) => {
+    if (err && err.name === "TokenExpiredError") {
+      jwt.sign(
+        { userId: user.id },
+        process.env.JWT_SECRET,
+        { expiresIn: "1h" },
+        (err, token) => {
+          if (err) {
+            console.error(err);
+            res.status(500).send();
+          }
+          res.status(200).send({data: { token: token }, message: "Token refreshed successfully"});
+        }
+      );
+    } else {
+      res.status(400).send({ message: "Error in refresh token" });
+    }
+  });
+});
+
 // Create a new spent transaction
 app.post("/:type/register/:id", authenticateToken, async (req, res) => {
   const type = req.params.type;
