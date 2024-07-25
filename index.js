@@ -158,10 +158,10 @@ app.post("/:type/register/:id", authenticateToken, async (req, res) => {
       newTransaction.type = 1;
     }
     await newTransaction.save();
-    res.send(newTransaction);
+    res.status(200).send({ message: "Transação cadastrada com sucesso!" });
   } catch (err) {
     console.error(err);
-    res.status(500).send();
+    res.status(500).send({ message: "Erro ao realizar operação" });
   }
 });
 
