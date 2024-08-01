@@ -201,6 +201,18 @@ app.get("/:type/index/:id", authenticateToken, async (req, res) => {
   }
 });
 
+// Get last 5 transactions
+app.get("/last/:id", authenticateToken, async (req, res) => {
+  try {
+    const transactions = await Transaction.find({ userID: req.params.id });
+    const lastTransactions = transactions.slice(-5);
+    res.status(200).send({data: lastTransactions.reverse(), message: "Ultimas transações listadas com sucesso"});
+  } catch (err) {
+    console.error(err);
+    res.status(500).send({ message: "Erro ao realizar operação", error: err });
+  }
+});
+
 // Edit a spent by id
 app.put("/transaction/:id", authenticateToken, async (req, res) => {
   try {
