@@ -20,7 +20,7 @@ app.post("/register", async (req, res) => {
     if (existingUser === null) {
       // validation
       switch (true) {
-        case !email || !password || !passwordVerify:
+        case !name || !email || !password || !passwordVerify:
           return res.status(400).json({
             message: "Porfavor, preencha todos os campos.",
           });
@@ -53,7 +53,7 @@ app.post("/register", async (req, res) => {
     }
   } catch (err) {
     console.error(err);
-    res.status(500).send(err);
+    res.status(500).send({message: "Erro ao realizar operação", error: err});
   }
 });
 
