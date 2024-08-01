@@ -165,27 +165,36 @@ app.post("/:type/register/:id", authenticateToken, async (req, res) => {
   }
 });
 
-// Get all spent transactions
+// Get all transactions
 app.get("/:type/index/:id", authenticateToken, async (req, res) => {
   const typeTransaction = req.params.type;
-  var type = 0;
 
-  if (typeTransaction === "spent") {
-    type = 0;
-  } else if (typeTransaction === "income") {
-    type = 1;
-  } else {
-    return res.status(400).json({ message: "Tipo de transação inválido" });
+  switch (typeTransaction) {
+    case "spent":
+      type = 0;
+      break;
+    case "income":
+      type = 1;
+      break;
+    case "all":
+      type = 2;
+      break;
+    default:
+      return res.status(400).json({ message: "Tipo de transação inválido" });
   }
 
   try {
+    if (type === 2) {
+      const transactions = await Transaction.find({ userID: req.params.id });
+      return res.status(200).send({ data: transactions.reverse(), message: "Transações listadas com sucesso" });
+    }
     const transactions = await Transaction.find({
       userID: req.params.id,
       type: type,
     });
     return res
       .status(200)
-      .send({ data: transactions, message: "Transações listadas com sucesso" });
+      .send({ data: transactions.reverse(), message: "Transações listadas com sucesso" });
   } catch (err) {
     console.error(err);
     res.status(500).send();
