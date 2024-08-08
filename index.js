@@ -156,6 +156,8 @@ app.post("/:type/register/:id", authenticateToken, async (req, res) => {
       newTransaction.type = 0;
     } else if (type === "income") {
       newTransaction.type = 1;
+    } else if (type === "investment") {
+      newTransaction.type = 2;
     }
     await newTransaction.save();
     res.status(200).send({ message: "Transação cadastrada com sucesso!" });
