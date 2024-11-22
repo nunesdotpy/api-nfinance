@@ -138,11 +138,10 @@ app.post("/auth/refresh", async (req, res) => {
 });
 
 // Create a new spent transaction
-app.post("/:type/register/:id", authenticateToken, async (req, res) => {
-  const type = req.params.type;
+app.post("/add/:id", authenticateToken, async (req, res) => {
 
   try {
-    const { name, amount, description, category } = req.body;
+    const { name, amount, description, category, type } = req.body;
     const date = new Date(); // Get current system date
     const newTransaction = new Transaction({
       name,
@@ -150,15 +149,10 @@ app.post("/:type/register/:id", authenticateToken, async (req, res) => {
       category,
       description,
       date,
+      type,
       userID: req.params.id,
     });
-    if (type === "spent") {
-      newTransaction.type = 0;
-    } else if (type === "income") {
-      newTransaction.type = 1;
-    } else if (type === "investment") {
-      newTransaction.type = 2;
-    }
+    
     await newTransaction.save();
     res.status(200).send({ message: "Transação cadastrada com sucesso!" });
   } catch (err) {
