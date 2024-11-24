@@ -162,21 +162,13 @@ app.post("/add/:id", authenticateToken, async (req, res) => {
 });
 
 // Get all transactions
-app.get("/:type/index/:id", authenticateToken, async (req, res) => {
-  const typeTransaction = req.params.type;
+app.get("/index/:id/:type", authenticateToken, async (req, res) => {
+  // type 0 = spent, 1 = income, 2 = all
 
-  switch (typeTransaction) {
-    case "spent":
-      type = 0;
-      break;
-    case "income":
-      type = 1;
-      break;
-    case "all":
-      type = 2;
-      break;
-    default:
-      return res.status(400).json({ message: "Tipo de transação inválido" });
+  const type = req.params.type;
+
+  if(!type) {
+    return res.status(400).json({ message: "Tipo de transação inválido" });
   }
 
   try {
