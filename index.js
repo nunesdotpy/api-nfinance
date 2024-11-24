@@ -204,11 +204,11 @@ app.get("/last/:id", authenticateToken, async (req, res) => {
 // Edit a spent by id
 app.put("/transaction/:id", authenticateToken, async (req, res) => {
   try {
-    const { name, amount, category } = req.body;
+    const { name, amount, category, type } = req.body;
     const date = new Date();
     const transaction = await Transaction.findOneAndUpdate(
       { _id: req.params.id },
-      { name, amount, category, date },
+      { name, amount, category, type, date },
     );
 
     if (transaction === null)
